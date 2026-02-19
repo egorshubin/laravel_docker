@@ -1,10 +1,6 @@
-## secret-chat-laravel-docker
+## Laravel Docker Setup
 
-This flow is applicable to docker for services: 
-* gateway.secret-chat.ai (main endpoint for frontend that stores access codes and usage and forwards queries) [secret-chat-gateway repo](https://github.com/egorshubin/secret-chat-gateway), 
-* compress.secret-chat.ai (compresses images that users upload) [secret-chat-compress repo](https://github.com/egorshubin/secret-chat-compress), 
-* mod.secret-chat.ai (moderation layer for all LLMs except Venice's) [secret-chat-moderation repo](https://github.com/egorshubin/secret-chat-moderation), 
-* llm1.secret-chat.ai (main worker that sends requests to LLMs) [secret-chat-laravel repo](https://github.com/egorshubin/secret-chat-laravel).
+Docker setup for Laravel applications with FrankenPHP, Redis queues, and cron support.
 
 ---
 
@@ -168,11 +164,11 @@ Both root and laravel users will now be able to use Git with GitHub using the sa
 ---
 
 ## Add Laravel Repo
-Clone the right repository, [here's the list](#secret-chat-laravel-docker) 
+Clone your Laravel repository:
 ```bash
 cd /var
-git clone git@github.com:egorshubin/secret-chat-laravel.git
-mv secret-chat-laravel www
+git clone git@github.com:yourusername/your-laravel-repo.git
+mv your-laravel-repo www
 ```
 Since now you must do git commands only from laravel user, so make it the owner.
 ```bash
@@ -189,8 +185,8 @@ Add .env file
 ## Add Docker Repo (this current repo at last!)
 ```bash
 cd /var
-git clone git@github.com:egorshubin/secret-chat-laravel-docker.git
-mv secret-chat-laravel-docker docker
+git clone git@github.com:yourusername/laravel-docker.git
+mv laravel-docker docker
 ```
 
 Inside /var/docker git commands must be run under root (so we do nothing)
@@ -198,21 +194,15 @@ Inside /var/docker git commands must be run under root (so we do nothing)
 ---
 ## Docker set up
 * add .env file
-* edit /var/docker/caddy/Caddyfile, add a proper domain (see their list below)
+* edit /var/docker/caddy/Caddyfile, add your domain
 * edit /var/docker/supervisor/supervisord.conf
-Change numprocs and queue name in command:
-* llm1.secret-chat.ai:
-  * --queue=llm
-  * numprocs=12 (change if you choose stronger server)
-* compress.secret-chat.ai:
-  * --queue=compress
-  * numprocs=2
-* mod.secret-chat.ai:
-  * --queue=moderation
-  * numprocs=6
-* gateway.secret-chat.ai
-  * remove --queue parameter!
-  * numprocs=6
+  * Change `--queue=` parameter to your queue name
+  * Change `numprocs=` - set the number of processes that you need
+* create /var/docker/crontab file with your cron schedule, for example:
+```
+* * * * * laravel php /var/www/artisan schedule:run >> /dev/null 2>&1
+```
+Note: The cron job runs as the `laravel` user (specified at the beginning of each line)
 ## Build docker containers
 Now you are ready for:
 ```bash
@@ -234,4 +224,4 @@ Check how the processes work:
 docker exec laravel_octane supervisorctl -c /etc/supervisor/conf.d/octane.conf status
 docker exec laravel_queue supervisorctl -c /etc/supervisor/conf.d/supervisord.conf status
 ```
-Supervisor now rules octane and redis queues
+Supervisor now manages Octane, Redis queues, and cron jobs
