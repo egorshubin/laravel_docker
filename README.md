@@ -113,7 +113,7 @@ Here's how to create an SSH key for the root user and copy it to the laravel use
 
 **Step 1: Create SSH key for root user**
 ```bash
-sudo ssh-keygen -t ed25519 -C "egor.shubin@bk.ru"
+sudo ssh-keygen -t ed25519 -C "your-email@example.com"
 ```
 
 When prompted:
