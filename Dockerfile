@@ -1,4 +1,4 @@
-FROM dunglas/frankenphp:1.9.1-php8.4
+FROM dunglas/frankenphp:php8.5
 
 # Switch to root to install system packages
 USER root
