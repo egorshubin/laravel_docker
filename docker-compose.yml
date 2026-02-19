@@ -1,0 +1,121 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel_octane
+    restart: unless-stopped
+    working_dir: /var/www
+    user: "1000:1000"  # Run as user ID 1000
+    volumes:
+      - /var/www:/var/www
+      - ./php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+      - ./supervisor/octane.conf:/etc/supervisor/conf.d/octane.conf
+    environment:
+      - OCTANE_SERVER=frankenphp
+      - REDIS_HOST=redis
+      - DB_HOST=mysql
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+    networks:
+      - laravel
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    entrypoint: ["/usr/local/bin/entrypoint-octane.sh"]
+
+  # NEW: Queue worker service with Supervisor
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel_queue
+    restart: unless-stopped
+    working_dir: /var/www
+    user: "1000:1000"
+    volumes:
+      - /var/www:/var/www
+      - ./php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+      - ./supervisor/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
+    environment:
+      - REDIS_HOST=redis
+      - DB_HOST=mysql
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+    networks:
+      - laravel
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    entrypoint: ["/usr/local/bin/entrypoint-queue.sh"]
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: laravel_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/www:/var/www
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - laravel
+    depends_on:
+      - app
+
+  mysql:
+    image: mysql:8.0
+    container_name: laravel_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+    networks:
+      - laravel
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Uncomment if you need to access MySQL from outside Docker
+    # ports:
+    #   - "3306:3306"
+
+  redis:
+    image: redis:7-alpine
+    container_name: laravel_redis
+    restart: unless-stopped
+    user: "999:999"
+    # Remove port mapping since you won't use Redis outside Docker
+    volumes:
+      - redis_data:/data
+    networks:
+      - laravel
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+
+networks:
+  laravel:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
+  redis_data:
+  mysql_data:

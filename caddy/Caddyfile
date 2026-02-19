@@ -1,0 +1,62 @@
+{
+    # Email for Let's Encrypt notifications
+    email egor.shubin@bk.ru
+}
+
+# HTTP to HTTPS redirect
+llm1.secret-chat.ai {
+    # Caddy will automatically obtain and manage Let's Encrypt certificate
+
+    reverse_proxy app:8000 {
+        # Forward real client IP
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-Host {host}
+
+        # Timeouts
+        transport http {
+            dial_timeout 10s
+            response_header_timeout 310s
+        }
+    }
+
+    # CORS headers for API access
+    @cors_preflight {
+        method OPTIONS
+    }
+
+    handle @cors_preflight {
+        header Access-Control-Allow-Origin *
+        header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        header Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, X-Api-Key"
+        header Access-Control-Max-Age "3600"
+        respond 204
+    }
+
+    header {
+        # Security headers
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+        # CORS for actual requests
+        Access-Control-Allow-Origin *
+
+        # Remove server info
+        -Server
+    }
+
+    # Logging
+    log {
+        output stdout
+        format json
+    }
+
+    # Error handling
+    handle_errors {
+        respond "{err.status_code} {err.status_text}"
+    }
+}
