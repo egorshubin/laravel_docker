@@ -4,7 +4,7 @@
 }
 
 # HTTP to HTTPS redirect
-llm1.secret-chat.ai {
+https://mv.opossum-dev.sbs {
     # Caddy will automatically obtain and manage Let's Encrypt certificate
 
     reverse_proxy app:8000 {

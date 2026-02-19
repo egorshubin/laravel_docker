@@ -39,16 +39,6 @@ COPY entrypoint-queue.sh /usr/local/bin/entrypoint-queue.sh
 COPY entrypoint-octane.sh /usr/local/bin/entrypoint-octane.sh
 RUN chmod +x /usr/local/bin/entrypoint-queue.sh /usr/local/bin/entrypoint-octane.sh
 
-# Setup cron
-COPY crontab /etc/cron.d/online-user-cron
-RUN sed -i 's/\r$//' /etc/cron.d/online-user-cron
-RUN chmod 0644 /etc/cron.d/online-user-cron
-RUN crontab /etc/cron.d/online-user-cron
-
-# Fix cron not running in Docker
-RUN touch /var/log/cron.log
-RUN sed -i '/session    required     pam_loginuid.so/c\#session    required     pam_loginuid.so' /etc/pam.d/cron
-
 # Set ownership
 RUN mkdir -p /var/www/storage/logs /var/www/storage/supervisor /var/www/bootstrap/cache \
     && chown -R laravel:laravel /var/www
