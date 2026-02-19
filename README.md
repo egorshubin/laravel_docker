@@ -185,7 +185,7 @@ Add .env file
 ## Add Docker Repo (this current repo at last!)
 ```bash
 cd /var
-git clone git@github.com:yourusername/laravel_docker.git
+git clone git@github.com:egorshubin/laravel_docker.git
 mv laravel_docker docker
 ```
 
