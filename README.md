@@ -167,7 +167,7 @@ Both root and laravel users will now be able to use Git with GitHub using the sa
 Clone your Laravel repository:
 ```bash
 cd /var
-git clone git@github.com:laravel/laravel.git
+git@github.com:egorshubin/laravel_octane.git
 mv laravel www
 ```
 Since now you must do git commands only from laravel user, so make it the owner.
